@@ -2,14 +2,16 @@ const express = require('express');
 const fs = require("fs")
 const geo = require('geolocation-utils')
 
-const app = express();
+app = express();
 app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true })) 
 
 var polygons = []
-const port = process.env.PORT || 3000;  
+const port = process.env.PORT || 3005;
+
 app.listen(port , ()=> {
-    let jsonData = JSON.parse(fs.readFileSync('sample-data.json'));
+    let rawData = fs.readFileSync('sample-data.json');
+    let jsonData = JSON.parse(rawData);
     let features =jsonData.features; 
     features.forEach(element => {
         let polygon = {
@@ -24,22 +26,28 @@ app.listen(port , ()=> {
     
 });
 
-app.get('/gis/testpoint' , (request,result)=>{
+app.get('/', (req,res)=> {
+    res.send(polygons);
+});
+
+
+app.get('/gis/testpoint' , (req,res)=>{
     
-    location = [parseFloat(request.query.lat) , parseFloat(request.query.lng)];
+    location = [parseFloat(req.query.lat) , parseFloat(req.query.lng)];
     resaults = [];
-    polygons.forEach(item => {
-        if (geo.insidePolygon(location,item.coordinates)){
-            resaults.push(item.name);
+    polygons.forEach(element => {
+        if (geo.insidePolygon(location,element.coordinates)){
+            resaults.push(element.name);
         }
     });
 
-    result.send({polygons : resaults});
+    res.send({polygons : resaults});
 
 })
 
-app.put('/gis/addpolygon', (request,result) =>{
-    data = request.body;
+
+app.put('/gis/addpolygon', (req,res) =>{
+    data = req.body;
 
     let polygon = {
         name : data.properties.name ,
@@ -48,10 +56,8 @@ app.put('/gis/addpolygon', (request,result) =>{
 
     polygons.push(polygon);
 
-    result.send({status : "success"});
+    res.send({status : "success"});
     
 });
-
-
 
 
